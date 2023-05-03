@@ -138,5 +138,39 @@ namespace ShoppingCartGrapql
             context.SaveChanges();
             return "Product deleted";
         }
+
+        [Authorize(Roles = new[] { "member" })]
+        public CartItem AddToCart([Service] GraphqlStudyCaseDbContext context, InputCart inputCart)
+        {
+            // ambil cart
+            var cart = context.UserCarts.FirstOrDefault(o => o.UserId == inputCart.UserId);
+
+            // jika cart tidak ada
+            if (cart == null)
+            {
+                // buat cart 
+                var newCart = new UserCart { UserId = inputCart.UserId , Checkout = false };
+                context.UserCarts.Add(newCart);
+                context.SaveChanges();
+                cart = context.UserCarts.FirstOrDefault(o => o.UserId == inputCart.UserId );
+            }
+
+            var product = context.Products.FirstOrDefault(o => o.Id == inputCart.ProductId);
+            if (product == null)
+            {
+                throw new ArgumentException("product tidak ada");
+            }
+
+            var itemCart = new CartItem
+            {
+                Name = product.Name,
+                Price = product.Price * inputCart.Quantity,
+                Quantity = inputCart.Quantity,
+                UserCartId = cart.Id
+            };
+            context.CartItems.Add(itemCart);
+            context.SaveChanges();
+            return itemCart;
+        }
     }
 }

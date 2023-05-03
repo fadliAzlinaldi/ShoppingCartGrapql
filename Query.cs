@@ -18,5 +18,13 @@ namespace ShoppingCartGrapql
                 throw new ArgumentException("product not found");
             }
         }
+
+        [Authorize(Roles = new[] { "member" })]
+        public IQueryable<CartItem> GetCartItems ([Service]GraphqlStudyCaseDbContext context, int userId)
+        {
+            var cart = context.UserCarts.FirstOrDefault(o => o.UserId == userId);
+            var cartItems = context.CartItems.Where(o => o.UserCartId == cart.Id);
+            return cartItems;
+        }
     }
 }
