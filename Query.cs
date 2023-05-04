@@ -29,8 +29,12 @@ namespace ShoppingCartGrapql
             if (user != null)
             {
                 var cart = context.UserCarts.Where(o => o.User.Username == user && o.Checkout == false).FirstOrDefault();
-                var cartItems = context.CartItems.Where(o => o.UserCartId == cart.Id);
-                return cartItems;
+                if ( cart != null )
+                {
+                    var cartItems = context.CartItems.Where(o => o.UserCartId == cart.Id);
+                    return cartItems;
+                }
+               
             }
             return null;
         }
