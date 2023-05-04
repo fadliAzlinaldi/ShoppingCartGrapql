@@ -1,5 +1,7 @@
 ﻿using HotChocolate.Authorization;
+using Microsoft.OpenApi.Validations;
 using ShoppingCartGrapql.Models;
+using System.Security.Claims;
 
 namespace ShoppingCartGrapql
 {
@@ -20,11 +22,17 @@ namespace ShoppingCartGrapql
         }
 
         [Authorize(Roles = new[] { "member" })]
-        public IQueryable<CartItem> GetCartItems ([Service]GraphqlStudyCaseDbContext context, int userId)
+        public IQueryable<CartItem>? GetCartItems ([Service]GraphqlStudyCaseDbContext context, HttpContext httpContext)
         {
-            var cart = context.UserCarts.FirstOrDefault(o => o.UserId == userId);
-            var cartItems = context.CartItems.Where(o => o.UserCartId == cart.Id);
-            return cartItems;
+            // get username
+            var user = httpContext.User.FindFirstValue(ClaimTypes.Name);
+            if (user != null)
+            {
+                var cart = context.UserCarts.Where(o => o.User.Username == user && o.Checkout == false).FirstOrDefault();
+                var cartItems = context.CartItems.Where(o => o.UserCartId == cart.Id);
+                return cartItems;
+            }
+            return null;
         }
     }
 }

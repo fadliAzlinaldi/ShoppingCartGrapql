@@ -2,6 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using ShoppingCartGrapql.Models;
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using System.Text;
 using BC = BCrypt.Net.BCrypt;
@@ -171,6 +172,40 @@ namespace ShoppingCartGrapql
             context.CartItems.Add(itemCart);
             context.SaveChanges();
             return itemCart;
+        }
+
+        [Authorize(Roles = new[] { "member" })]
+        public CartItem UpdateCartItem([Service] GraphqlStudyCaseDbContext context, HttpContext httpContext , UpdateCart updateCart)
+        {
+            // get username
+            var user = httpContext.User.FindFirstValue(ClaimTypes.Name);
+            if (user == null) { throw new ArgumentException("user not found"); }
+            var cart = context.UserCarts.Where(o => o.User.Username == user && o.Checkout == false).FirstOrDefault();
+           
+            // ambil product
+            var product = context.Products.FirstOrDefault(o => o.Id == updateCart.ProductId);
+
+            // ambil cart sesuai name nya 
+            var cartItem = context.CartItems.FirstOrDefault(o => o.UserCartId == cart.Id);
+            cartItem.Name = product.Name;
+            cartItem.Quantity = updateCart.Quantity;
+            context.CartItems.Update(cartItem);
+            context.SaveChanges();
+            return cartItem;
+        }
+
+        [Authorize(Roles = new[] { "member" })]
+        public string Checkout([Service] GraphqlStudyCaseDbContext context, HttpContext httpContext)
+        {
+            // get username
+            var user = httpContext.User.FindFirstValue(ClaimTypes.Name);
+            if (user == null) { throw new ArgumentException("user not found"); }
+            var cart = context.UserCarts.Where(o => o.User.Username == user ).FirstOrDefault();
+            cart.Checkout = true;
+            context.UserCarts.Update(cart);
+            context.SaveChanges();
+            return "product deleted";
+
         }
     }
 }
